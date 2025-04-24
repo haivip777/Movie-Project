@@ -7,7 +7,7 @@ import { updateSearchCount, getTrendingMovies } from './appwrite';
 
 
 // http://www.omdbapi.com/?i=tt3896198&apikey=98bc1e18
-const API_URL = 'http://www.omdbapi.com?apikey=98bc1e18';
+const API_URL = 'https://www.omdbapi.com?apikey=98bc1e18';
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -84,7 +84,7 @@ const App = () => {
         </header>
 
         {trendingMovies.length > 0 && (
-          <section class='trending'>
+          <section className='trending'>
             <h2>Trending Movies</h2>
             <ul>
               {trendingMovies.map((movie, index) => (
