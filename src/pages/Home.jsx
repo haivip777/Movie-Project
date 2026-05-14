@@ -20,15 +20,20 @@ const Home = () => {
   const [trendingMovies, setTrendingMovies] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [deboundedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // tối ưu hóa việc gọi API (delay việc gọi API)
-  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+  useDebounce(() => {
+    setDebouncedSearchTerm(searchTerm);
+    setPage(1);
+  }, 500, [searchTerm]);
 
-  const fetchMovies = async (query = '') => {
+  const fetchMovies = async (query = '', pageNum = 1) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      let url = `${API_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+      let url = `${API_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${pageNum}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch movies');
@@ -41,10 +46,10 @@ const Home = () => {
         return;
       }
       setMovies(data.results || []);
+      setTotalPages(data.total_pages || 1);
 
-      if (query && data.results && data.results.length > 0) {
+      if (query && data.results && data.results.length > 0 && pageNum === 1) {
         await updateSearchCount(query, data.results[0]);
-        loadTrendingMovies();
       }
     } catch (error) {
       console.log(`Error fetching movies: ${error}`);
@@ -53,6 +58,7 @@ const Home = () => {
       setIsLoading(false);
     }
   };
+
   const loadTrendingMovies = async () => {
     try {
       const response = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=1`);
@@ -65,16 +71,10 @@ const Home = () => {
     }
   }
 
-  // Gọi khi load lần đầu (chạy đúng 1 lần)
   useEffect(() => {
-    fetchMovies('man'); // Hoặc có thể để query trống: fetchMovies('', '2024')
-  }, []);
-
-  useEffect(() => {
-    if (deboundedSearchTerm.trim() !== '') {
-      fetchMovies(deboundedSearchTerm);
-    }
-  }, [deboundedSearchTerm]);
+    const query = deboundedSearchTerm.trim() || 'man';
+    fetchMovies(query, page);
+  }, [deboundedSearchTerm, page]);
 
   useEffect(() => {
     loadTrendingMovies();
@@ -124,11 +124,43 @@ const Home = () => {
           ) : errorMessage ? (
             <p className="text-red-500">{errorMessage}</p>
           ) : (
-            <ul>
-              {movies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </ul>
+            <>
+              <ul>
+                {movies.map((movie) => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </ul>
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-6 mt-12 mb-8">
+                  <button 
+                    onClick={() => {
+                      setPage(prev => Math.max(prev - 1, 1));
+                      window.scrollTo({ top: document.querySelector('.all-movies').offsetTop - 100, behavior: 'smooth' });
+                    }}
+                    disabled={page === 1}
+                    className="w-12 h-12 flex items-center justify-center bg-dark-100 border border-white/10 rounded-full text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
+                  <span className="text-gray-300 font-medium">Page {page} of {totalPages > 500 ? 500 : totalPages}</span>
+                  <button 
+                    onClick={() => {
+                      setPage(prev => Math.min(prev + 1, totalPages));
+                      window.scrollTo({ top: document.querySelector('.all-movies').offsetTop - 100, behavior: 'smooth' });
+                    }}
+                    disabled={page === totalPages || page >= 500}
+                    className="w-12 h-12 flex items-center justify-center bg-[#AB8BFF] text-white font-medium rounded-full disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#AB8BFF]/80 transition-colors shadow-[0_0_15px_rgba(171,139,255,0.3)]"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </>
           )
         }
       </section>
