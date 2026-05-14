@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Favorites from './pages/Favorites';
 import MovieDetails from './pages/MovieDetails';
+import Footer from './components/Footer';
 import { WatchlistProvider } from './context/WatchlistContext';
 
 const App = () => {
@@ -20,6 +21,7 @@ const App = () => {
               <Route path="/movie/:id" element={<MovieDetails />} />
             </Routes>
           </div>
+          <Footer />
         </main>
       </BrowserRouter>
     </WatchlistProvider>

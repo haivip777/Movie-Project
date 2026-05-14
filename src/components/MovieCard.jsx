@@ -16,7 +16,12 @@ const MovieCard = ({movie}) => {
     // Trigger animation only when adding to watchlist
     if (!isSaved) {
       const rect = e.currentTarget.getBoundingClientRect();
-      const dest = document.getElementById('watchlist-nav')?.getBoundingClientRect();
+      const destDesktop = document.getElementById('watchlist-nav');
+      const destMobile = document.getElementById('hamburger-nav');
+      
+      // Determine which destination is currently visible on screen
+      const destElement = (destDesktop && destDesktop.offsetWidth > 0) ? destDesktop : destMobile;
+      const dest = destElement?.getBoundingClientRect();
       
       if (dest) {
         setFlyingHeart({

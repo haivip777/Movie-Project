@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react'
 import Search from '../components/Search'
 import { SkeletonList } from '../components/Skeleton'
 import MovieCard from '../components/MovieCard';
+import FAQ from '../components/FAQ';
 import { useDebounce } from 'react-use';
 import { updateSearchCount } from '../appwrite';
 import { Link } from 'react-router-dom';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
 
 // http://www.omdbapi.com/?i=tt3896198&apikey=98bc1e18
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -56,7 +59,7 @@ const Home = () => {
       if (!response.ok) throw new Error('Failed to fetch trending movies');
       const data = await response.json();
       
-      setTrendingMovies(data.results.slice(0, 5));
+      setTrendingMovies(data.results.slice(0, 10));
     } catch (error) {
       console.log(`Error fetching trending movies: ${error}`);
     }
@@ -88,16 +91,28 @@ const Home = () => {
       {trendingMovies.length > 0 && (
         <section className='trending'>
           <h2>Trending Movies</h2>
-          <ul>
-            {trendingMovies.map((movie, index) => (
-              <li key={movie.id}>
-                <p>{index + 1}</p>
-                <Link to={`/movie/${movie.id}`} className="block w-[127px] h-[163px]">
-                  <img src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/no-movie.png'} alt={movie.title} className="w-full h-full object-cover rounded-lg" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="-mt-10 w-full pb-6">
+            <Swiper
+              spaceBetween={10}
+              breakpoints={{
+                0: { slidesPerView: 2.2 },
+                640: { slidesPerView: 3.2 },
+                1024: { slidesPerView: 4.5 },
+              }}
+              className="w-full"
+            >
+              {trendingMovies.map((movie, index) => (
+                <SwiperSlide key={movie.id}>
+                  <div className="flex flex-row items-center justify-start pl-2 py-4">
+                    <p className="fancy-text text-nowrap mt-[22px] relative z-20 drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">{index + 1}</p>
+                    <Link to={`/movie/${movie.id}`} className="block w-[120px] md:w-[140px] h-[170px] md:h-[200px] shrink-0 -ml-6 md:-ml-8 relative hover:scale-105 transition-transform duration-300 z-10">
+                      <img src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/no-movie.png'} alt={movie.title} className="w-full h-full object-cover rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.5)] border border-white/5" />
+                    </Link>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         </section>
       )}
 
@@ -117,6 +132,8 @@ const Home = () => {
           )
         }
       </section>
+
+      <FAQ />
     </>
   )
 }
