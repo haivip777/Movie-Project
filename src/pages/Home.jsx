@@ -11,7 +11,16 @@ import 'swiper/css';
 
 // http://www.omdbapi.com/?i=tt3896198&apikey=98bc1e18
 const API_KEY = import.meta.env.VITE_API_KEY;
-const API_URL = 'https://api.themoviedb.org/3/search/movie';
+
+const GENRES = [
+  { id: '', name: 'All' },
+  { id: '28', name: 'Action' },
+  { id: '35', name: 'Comedy' },
+  { id: '27', name: 'Horror' },
+  { id: '10749', name: 'Romance' },
+  { id: '878', name: 'Sci-Fi' },
+  { id: '16', name: 'Animation' },
+];
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,18 +31,38 @@ const Home = () => {
   const [deboundedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeGenre, setActiveGenre] = useState('');
 
   // tối ưu hóa việc gọi API (delay việc gọi API)
   useDebounce(() => {
     setDebouncedSearchTerm(searchTerm);
+    if (searchTerm.trim() !== '') {
+      setActiveGenre(''); // Mutually exclusive: search clears genre
+    }
     setPage(1);
   }, 500, [searchTerm]);
 
-  const fetchMovies = async (query = '', pageNum = 1) => {
+  const handleGenreClick = (genreId) => {
+    setActiveGenre(genreId);
+    setSearchTerm(''); // Mutually exclusive: genre clears search
+    setDebouncedSearchTerm('');
+    setPage(1);
+  };
+
+  const fetchMovies = async (query = '', genreId = '', pageNum = 1) => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      let url = `${API_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${pageNum}`;
+      let url = '';
+      if (query) {
+        url = `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${pageNum}`;
+      } else {
+        url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&sort_by=popularity.desc&page=${pageNum}`;
+        if (genreId) {
+          url += `&with_genres=${genreId}`;
+        }
+      }
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch movies');
@@ -48,6 +77,7 @@ const Home = () => {
       setMovies(data.results || []);
       setTotalPages(data.total_pages || 1);
 
+      // Only track search queries, not genre discovers
       if (query && data.results && data.results.length > 0 && pageNum === 1) {
         await updateSearchCount(query, data.results[0]);
       }
@@ -72,9 +102,8 @@ const Home = () => {
   }
 
   useEffect(() => {
-    const query = deboundedSearchTerm.trim() || 'man';
-    fetchMovies(query, page);
-  }, [deboundedSearchTerm, page]);
+    fetchMovies(deboundedSearchTerm.trim(), activeGenre, page);
+  }, [deboundedSearchTerm, activeGenre, page]);
 
   useEffect(() => {
     loadTrendingMovies();
@@ -86,6 +115,23 @@ const Home = () => {
         <img src="./hero.png" alt="Hero Banner" />
         <h1>Find <span className="text-gradient">Movies</span> You'll Enjoy Without the Hassle</h1>
         <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        
+        {/* Genre Filter */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+          {GENRES.map(genre => (
+            <button
+              key={genre.name}
+              onClick={() => handleGenreClick(genre.id)}
+              className={`px-5 py-2 rounded-full font-medium transition-all duration-300 border ${
+                activeGenre === genre.id 
+                  ? 'bg-[#AB8BFF] text-white border-[#AB8BFF] shadow-[0_0_15px_rgba(171,139,255,0.4)]' 
+                  : 'bg-dark-100/50 text-gray-300 border-white/10 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {genre.name}
+            </button>
+          ))}
+        </div>
       </header>
 
       {trendingMovies.length > 0 && (
