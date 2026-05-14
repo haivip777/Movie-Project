@@ -17,25 +17,25 @@ export const updateSearchCount = async (searchTerm, movie) => {
       Query.equal('searchTerm', searchTerm),
     ])
     // 2. If it does, update the count
-    if(result.documents.length > 0) {
+    if (result.documents.length > 0) {
       const doc = result.documents[0];
       await database.updateDocument(DATABASE_ID, COLLECTION_ID, doc.$id, {
         count: doc.count + 1,
       })
-    // 3. If it doesn't, create a new document with the search term and count as 1
+      // 3. If it doesn't, create a new document with the search term and count as 1
     } else {
       await database.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), {
         searchTerm,
         count: 1,
-        movie_id: movie.imdbID,
-        poster_url: movie.Poster,
+        movie_id: String(movie.id),
+        poster_url: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
       });
     }
   } catch (error) {
     console.error('Error fetching documents:', error);
     return;
   }
-  
+
 }
 
 export const getTrendingMovies = async () => {

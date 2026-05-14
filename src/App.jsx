@@ -7,7 +7,8 @@ import { updateSearchCount, getTrendingMovies } from './appwrite';
 
 
 // http://www.omdbapi.com/?i=tt3896198&apikey=98bc1e18
-const API_URL = 'https://www.omdbapi.com?apikey=98bc1e18';
+const API_KEY = import.meta.env.VITE_API_KEY;
+const API_URL = 'https://api.themoviedb.org/3/search/movie';
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -16,7 +17,7 @@ const App = () => {
   const [trendingMovies, setTrendingMovies] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [deboundedSearchTerm, setDebouncedSearchTerm] = useState('');
-  
+
   // tối ưu hóa việc gọi API (delay việc gọi API)
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
@@ -24,21 +25,25 @@ const App = () => {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      let url = `${API_URL}&s=${encodeURIComponent(query)}`;
+      let url = `${API_URL}?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+      console.log('url:', url);
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch movies');
       }
       const data = await response.json();
+      console.log('data:', data);
+
       if (data.Response === 'False') {
         setErrorMessage(data.Error || 'Failed to fetch movies');
         setMovies([]);
         return;
       }
-      setMovies(data.Search || []);
+      setMovies(data.results || []);
 
-      if(query && data.Search.length > 0) {
-        await updateSearchCount(query, data.Search[0]);
+      if (query && data.results && data.results.length > 0) {
+        await updateSearchCount(query, data.results[0]);
+        loadTrendingMovies();
       }
     } catch (error) {
       console.log(`Error fetching movies: ${error}`);
@@ -63,7 +68,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (deboundedSearchTerm.trim() !== ''){
+    if (deboundedSearchTerm.trim() !== '') {
       fetchMovies(deboundedSearchTerm);
     }
   }, [deboundedSearchTerm]);
@@ -74,8 +79,8 @@ const App = () => {
 
   return (
     <main>
-      <div className="pattern"/>
-      
+      <div className="pattern" />
+
       <div className="wrapper">
         <header>
           <img src="./hero.png" alt="Hero Banner" />
@@ -88,9 +93,9 @@ const App = () => {
             <h2>Trending Movies</h2>
             <ul>
               {trendingMovies.map((movie, index) => (
-                <li key={movie.imdbID} movie={movie} >
+                <li key={movie.$id}>
                   <p>{index + 1}</p>
-                  <img src={movie.poster_url} alt={movie.Title} />
+                  <img src={movie.poster_url} alt={movie.searchTerm} />
                 </li>
               ))}
             </ul>
@@ -107,7 +112,7 @@ const App = () => {
             ) : (
               <ul>
                 {movies.map((movie) => (
-                  <MovieCard key={movie.imdbID} movie={movie} />
+                  <MovieCard key={movie.id} movie={movie} />
                 ))}
               </ul>
             )
