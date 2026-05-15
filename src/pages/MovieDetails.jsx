@@ -107,7 +107,7 @@ const MovieDetails = () => {
           {movie.credits?.cast?.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4 text-white">Top Cast</h2>
-              <div className="flex overflow-x-auto gap-4 pb-4 hide-scrollbar">
+              <div className="flex overflow-x-auto gap-4 pb-4 hide-scrollbar flex-wrap">
                 {movie.credits.cast.slice(0, 6).map(person => (
                   <div key={person.id} className="min-w-[100px] max-w-[100px] text-center">
                     <div className="w-20 h-20 mx-auto mb-2 rounded-full overflow-hidden border-2 border-white/10">
